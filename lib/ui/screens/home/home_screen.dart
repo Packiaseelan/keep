@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:keep/config/config.dart';
+import 'package:keep/models/notes_model.dart';
 import 'package:keep/ui/screens/home/cubit/home_cubit.dart';
 import 'package:keep/ui/screens/home/cubit/home_state.dart';
 import 'package:keep/ui/widgets/grid_item.dart';
@@ -41,32 +42,53 @@ class _HomeScreenState extends State<HomeScreen> {
               context.read<HomeCubit>().getNotes();
             }
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const NotesTextField(),
-                if (state is HomeNotesState && state.notes.isNotEmpty)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: ReorderableGridView.extent(
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        maxCrossAxisExtent: 250,
-                        childAspectRatio: 2 / 1,
-                        onReorder: (oldIndex, newIndex) {
-                          final temp = state.notes[oldIndex];
-                          state.notes[oldIndex] = state.notes[newIndex];
-                          state.notes[newIndex] = temp;
-                          setState(() {});
-                        },
-                        children: state.notes.map((e) => GridItem(key: ValueKey(e), note: e)).toList(),
-                      ),
-                    ),
-                  )
+                if (state is HomeNotesState && state.pinnedNotes.isNotEmpty) _buildTitle('PINNED'),
+                if (state is HomeNotesState && state.pinnedNotes.isNotEmpty) _buildGrid(state.pinnedNotes),
+                if (state is HomeNotesState && state.pinnedNotes.isNotEmpty) const SizedBox(height: 20),
+                if (state is HomeNotesState && state.pinnedNotes.isNotEmpty && state.notes.isNotEmpty) _buildTitle('OTHERS'),
+                if (state is HomeNotesState && state.notes.isNotEmpty) _buildGrid(state.notes)
               ],
             );
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildGrid(List<NotesResponse> notes) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      child: ReorderableGridView.extent(
+        shrinkWrap: true,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        maxCrossAxisExtent: 250,
+        childAspectRatio: 2 / 1,
+        onReorder: (oldIndex, newIndex) {
+          final temp = notes[oldIndex];
+          notes[oldIndex] = notes[newIndex];
+          notes[newIndex] = temp;
+          setState(() {});
+        },
+        children: notes
+            .map((e) => GridItem(
+                  key: ValueKey(e),
+                  note: e,
+                  onPinned: () => context.read<HomeCubit>().pinnedNotes(e, !e.value!.isPinned!),
+                  onDelete: () => context.read<HomeCubit>().delete(e.key!),
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _buildTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Text(title, style: Theme.of(context).textTheme.titleMedium,),
     );
   }
 }

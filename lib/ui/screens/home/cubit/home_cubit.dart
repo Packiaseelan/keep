@@ -12,8 +12,19 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> getNotes() async {
     final list = await serviceLocator<FirebaseDatabaseService>().getData();
+  var pinned = <NotesResponse> [];
+  var others = <NotesResponse> [];
+    for (var e in list) {
+      if (e.value!.isPinned == true) {
+        pinned.add(e);
+      } else {
+        others.add(e);
+      }
+    }
 
-    emit(HomeNotesState(notes: list));
+    emit(HomeNotesState(
+      pinnedNotes: pinned,
+      notes: others));
   }
 
   Future<void> saveNotes(String title, String description, bool isPinned) async {
@@ -24,6 +35,14 @@ class HomeCubit extends Cubit<HomeState> {
         description: description,
         isPinned: isPinned);
     await serviceLocator<FirebaseDatabaseService>().saveNotes(notes);
+
+    getNotes();
+  }
+
+  Future<void> pinnedNotes(NotesResponse note, bool isPinned) async {
+    final n = note.value!;
+    n.isPinned = isPinned;
+    await serviceLocator<FirebaseDatabaseService>().update(note.key!, n);
 
     getNotes();
   }
