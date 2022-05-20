@@ -5,6 +5,7 @@ import 'package:keep/config/config.dart';
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  setUpLocator();
   runApp(const MyApp());
 }
 

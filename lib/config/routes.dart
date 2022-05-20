@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:keep/ui/screens/home/cubit/home_cubit.dart';
 import 'package:keep/ui/screens/screens.dart';
 
 class Routes {
@@ -27,8 +29,11 @@ class Routes {
       case home:
         return _getPageRoute(
           routeName: settings.name,
-          viewToShow: const HomeScreen(
-            key: Key('Rouetes_HomeScreen'),
+          viewToShow: BlocProvider(
+            create: (_) => HomeCubit(),
+            child: const HomeScreen(
+              key: Key('Rouetes_HomeScreen'),
+            ),
           ),
         );
 
