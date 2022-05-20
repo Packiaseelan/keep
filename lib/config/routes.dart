@@ -4,6 +4,7 @@ import 'package:keep/ui/screens/screens.dart';
 class Routes {
   static const String initial = '/';
   static const String login = '/login';
+  static const String home = '/home';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -20,6 +21,14 @@ class Routes {
           routeName: settings.name,
           viewToShow: const LoginScreen(
             key: Key('Rouetes_LoginScreen'),
+          ),
+        );
+
+      case home:
+        return _getPageRoute(
+          routeName: settings.name,
+          viewToShow: const HomeScreen(
+            key: Key('Rouetes_HomeScreen'),
           ),
         );
 
