@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:keep/models/notes_model.dart';
 
 class FirebaseDatabaseService {
   final databaseReference = FirebaseDatabase.instance.ref();
+  final _auth = FirebaseAuth.instance;
 
   Future saveNotes(NotesModel notes) async {
     var id = databaseReference.child('notes/').push();
@@ -10,7 +12,8 @@ class FirebaseDatabaseService {
   }
 
   Future<List<NotesResponse>> getData() async {
-    var databaseEvent =  await databaseReference.child('notes/').once();
+    final userId = _auth.currentUser?.uid;
+    var databaseEvent =  await databaseReference.child('notes/').orderByChild('userId').equalTo(userId).once();
     DataSnapshot dataSnapshot = databaseEvent.snapshot;
     var notes = <NotesResponse> [];
     if (dataSnapshot.value != null) {
