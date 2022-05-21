@@ -35,7 +35,7 @@ class _AuthFormState extends State<AuthForm> {
       if (_isLogin) {
         context.read<LoginCubit>().doLogin(_userEmail.trim(), _userPassword.trim());
       } else {
-        context.read<LoginCubit>().doRegister(_userEmail.trim(), _userPassword.trim());
+        context.read<LoginCubit>().doRegister(_userEmail.trim(), _userPassword.trim(), _userName.trim());
       }
     }
   }

@@ -6,8 +6,10 @@ import 'package:keep/models/notes_model.dart';
 import 'package:keep/ui/screens/home/cubit/home_cubit.dart';
 import 'package:keep/ui/screens/home/cubit/home_state.dart';
 import 'package:keep/ui/widgets/grid_item.dart';
+import 'package:keep/ui/widgets/grid_item_shared.dart';
 import 'package:keep/ui/widgets/notes_dialog_widget.dart';
 import 'package:keep/ui/widgets/notes_field.dart';
+import 'package:keep/ui/widgets/shared_notes_dialog.dart';
 import 'package:reorderable_grid/reorderable_grid.dart';
 import 'package:keep/utils/custom_dialog.dart';
 
@@ -52,6 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     context.read<HomeCubit>().saveNotes(title, description, false);
                   },
                 ),
+                if (state is HomeNotesState && state.sharedWithMe.isNotEmpty) _buildTitle('SHARED WITH YOU'),
+                if (state is HomeNotesState && state.sharedWithMe.isNotEmpty) _buildGrid(state.sharedWithMe, isShared: true),
                 if (state is HomeNotesState && state.pinnedNotes.isNotEmpty) _buildTitle('PINNED'),
                 if (state is HomeNotesState && state.pinnedNotes.isNotEmpty) _buildGrid(state.pinnedNotes),
                 if (state is HomeNotesState && state.pinnedNotes.isNotEmpty) const SizedBox(height: 20),
@@ -67,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildGrid(List<NotesResponse> notes) {
+  Widget _buildGrid(List<NotesResponse> notes, {bool isShared = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: ReorderableGridView.extent(
@@ -86,15 +90,21 @@ class _HomeScreenState extends State<HomeScreen> {
             .map((e) => GestureDetector(
                   key: ValueKey(e),
                   onTap: () async {
-                    customDialog(context, child: NotesDialogWidget(note: e)).then((value) {
-                      context.read<HomeCubit>().updateNotes(e);
-                    });
+                    if (isShared) {
+                      customDialog(context, child: SharedNotesDialog(note: e));
+                    } else {
+                      customDialog(context, child: NotesDialogWidget(note: e)).then((value) {
+                        context.read<HomeCubit>().updateNotes(e);
+                      });
+                    }
                   },
-                  child: GridItem(
-                    note: e,
-                    onPinned: () => context.read<HomeCubit>().pinnedNotes(e, !e.value!.isPinned!),
-                    onDelete: () => context.read<HomeCubit>().delete(e.key!),
-                  ),
+                  child: isShared
+                      ? GridItemShared(note: e)
+                      : GridItem(
+                          note: e,
+                          onPinned: () => context.read<HomeCubit>().pinnedNotes(e, !e.value!.isPinned!),
+                          onDelete: () => context.read<HomeCubit>().delete(e.key!),
+                        ),
                 ))
             .toList(),
       ),
@@ -112,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNoData(HomeState state) {
-    if (state is HomeNotesState && state.notes.isEmpty && state.pinnedNotes.isEmpty) {
+    if (state is HomeNotesState && state.notes.isEmpty && state.pinnedNotes.isEmpty && state.sharedWithMe.isEmpty) {
       return Expanded(
         child: Center(
           child: Column(

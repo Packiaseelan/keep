@@ -6,14 +6,27 @@ import 'package:keep/service/firebase_database_service.dart';
 import 'package:keep/ui/screens/home/cubit/home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
+  final _auth = FirebaseAuth.instance;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   HomeCubit() : super(HomeInitial());
 
   Future<void> getNotes() async {
+    final userId = _auth.currentUser?.uid;
     final list = await serviceLocator<FirebaseDatabaseService>().getData();
-  var pinned = <NotesResponse> [];
-  var others = <NotesResponse> [];
+    final shared = await serviceLocator<FirebaseDatabaseService>().getSharedWithUser(userId!);
+
+    var sharedWithMe = <NotesResponse>[];
+    var pinned = <NotesResponse>[];
+    var others = <NotesResponse>[];
+
+    for(var share in shared) {
+      var note = await serviceLocator<FirebaseDatabaseService>().getNoteBy(share.noteId!);
+      var user = await serviceLocator<FirebaseDatabaseService>().getUserBy(share.userId!);
+      note.value!.sharedBy = user.userName;
+      sharedWithMe.add(note);
+    }
+
     for (var e in list) {
       if (e.value!.isPinned == true) {
         pinned.add(e);
@@ -24,7 +37,9 @@ class HomeCubit extends Cubit<HomeState> {
 
     emit(HomeNotesState(
       pinnedNotes: pinned,
-      notes: others));
+      notes: others,
+      sharedWithMe: sharedWithMe,
+    ));
   }
 
   Future<void> saveNotes(String title, String description, bool isPinned) async {

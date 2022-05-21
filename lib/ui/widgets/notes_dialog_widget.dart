@@ -3,8 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:keep/config/service_locator.dart';
+import 'package:keep/config/config.dart';
 import 'package:keep/models/notes_model.dart';
+import 'package:keep/models/shared_with_model.dart';
+import 'package:keep/models/user_model.dart';
+import 'package:keep/service/firebase_database_service.dart';
 import 'package:keep/service/firebase_storage_service.dart';
 import 'package:keep/ui/widgets/grid_item.dart';
 
@@ -64,7 +67,7 @@ class _NotesDialogWidgetState extends State<NotesDialogWidget> {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Row(
                         children: [
-                          IconButtonWidget(icon: Icons.person_add, onTap: () {}),
+                          IconButtonWidget(icon: Icons.person_add, onTap: _onShare),
                           const SizedBox(width: 15),
                           IconButtonWidget(icon: Icons.image, onTap: _pickImage),
                           const Spacer(),
@@ -99,12 +102,9 @@ class _NotesDialogWidgetState extends State<NotesDialogWidget> {
     if (imagePath != null) {
       return Stack(
         children: [
-          Image.network(
-            imagePath,
+          SizedBox(
             height: 150,
-            loadingBuilder: (c, child, ice) {
-              return const CircularProgressIndicator();
-            },
+            child: Image.network(imagePath, height: 150),
           ),
           Positioned(
             right: 0,
@@ -152,6 +152,15 @@ class _NotesDialogWidgetState extends State<NotesDialogWidget> {
     await serviceLocator<FirebaseStorageService>().deleteFile(path);
     widget.note.value!.imagePath = "";
     setState(() {});
+  }
+
+  void _onShare() async {
+    final users = await Navigator.pushNamed(context, Routes.shareWith, arguments: {'noteId': widget.note.key!}) as List<UserModel>;
+    var shared = <SharedWithModel>[];
+    for (var user in users) {
+      shared.add(SharedWithModel(userId: user.userId, noteId: widget.note.key));
+    }
+    await serviceLocator<FirebaseDatabaseService>().saveSharedWith(shared);
   }
 }
 

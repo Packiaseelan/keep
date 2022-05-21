@@ -24,6 +24,7 @@ class NotesModel {
    String? description;
    bool? isPinned;
    String? imagePath;
+   String? sharedBy;
 
   NotesModel({
     required this.userId,
@@ -32,6 +33,7 @@ class NotesModel {
     required this.description,
     this.isPinned = false,
     this.imagePath,
+    this.sharedBy,
   });
 
 
