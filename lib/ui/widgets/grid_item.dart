@@ -29,11 +29,13 @@ class GridItem extends StatelessWidget {
                   Text(
                     note.value!.title!,
                     style: Theme.of(context).textTheme.headline6,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 if (note.value!.description != null && note.value!.description!.isNotEmpty)
                   Text(
                     note.value!.description!,
                     style: Theme.of(context).textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
                   ),
               ],
             ),
@@ -57,17 +59,25 @@ class GridItem extends StatelessWidget {
 class IconButtonWidget extends StatelessWidget {
   final IconData icon;
   final Function() onTap;
-  const IconButtonWidget({Key? key, required this.icon, required this.onTap}) : super(key: key);
+  final Color bgColor;
+  final Color iconColor;
+  const IconButtonWidget({
+    Key? key,
+    required this.icon,
+    required this.onTap,
+    this.bgColor = Colors.black12,
+    this.iconColor = Colors.black,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black26),
+        decoration: BoxDecoration(shape: BoxShape.circle, color: bgColor),
         child: Padding(
           padding: const EdgeInsets.all(5.0),
-          child: Icon(icon, size: 15),
+          child: Icon(icon, size: 15, color: iconColor),
         ),
       ),
     );

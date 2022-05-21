@@ -23,13 +23,15 @@ class NotesModel {
    String? title;
    String? description;
    bool? isPinned;
+   String? imagePath;
 
   NotesModel({
     required this.userId,
     required this.dateTime,
     this.title,
     required this.description,
-    this.isPinned = false
+    this.isPinned = false,
+    this.imagePath,
   });
 
 
@@ -40,6 +42,7 @@ class NotesModel {
       'description': description,
       'dateTime': dateTime,
       'isPinned': isPinned,
+      'imagePath': imagePath,
     };
   }
 
@@ -49,5 +52,6 @@ class NotesModel {
     description = json['description'];
     dateTime = json['dateTime'];
     isPinned = json['isPinned'];
+    imagePath = json['imagePath'];
   }
 }

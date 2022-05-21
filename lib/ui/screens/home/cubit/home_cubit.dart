@@ -47,6 +47,12 @@ class HomeCubit extends Cubit<HomeState> {
     getNotes();
   }
 
+  Future<void> updateNotes(NotesResponse note) async {
+    await serviceLocator<FirebaseDatabaseService>().update(note.key!, note.value!);
+
+    getNotes();
+  }
+
   Future<void> delete(String key) async {
     await serviceLocator<FirebaseDatabaseService>().delete(key);
     getNotes();

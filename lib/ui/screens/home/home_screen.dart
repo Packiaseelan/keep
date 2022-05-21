@@ -6,7 +6,10 @@ import 'package:keep/models/notes_model.dart';
 import 'package:keep/ui/screens/home/cubit/home_cubit.dart';
 import 'package:keep/ui/screens/home/cubit/home_state.dart';
 import 'package:keep/ui/widgets/grid_item.dart';
+import 'package:keep/ui/widgets/notes_dialog_widget.dart';
+import 'package:keep/ui/widgets/notes_field.dart';
 import 'package:reorderable_grid/reorderable_grid.dart';
+import 'package:keep/utils/custom_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -44,12 +47,18 @@ class _HomeScreenState extends State<HomeScreen> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const NotesTextField(),
+                NotesTextField(
+                  onSave: (title, description) {
+                    context.read<HomeCubit>().saveNotes(title, description, false);
+                  },
+                ),
                 if (state is HomeNotesState && state.pinnedNotes.isNotEmpty) _buildTitle('PINNED'),
                 if (state is HomeNotesState && state.pinnedNotes.isNotEmpty) _buildGrid(state.pinnedNotes),
                 if (state is HomeNotesState && state.pinnedNotes.isNotEmpty) const SizedBox(height: 20),
-                if (state is HomeNotesState && state.pinnedNotes.isNotEmpty && state.notes.isNotEmpty) _buildTitle('OTHERS'),
-                if (state is HomeNotesState && state.notes.isNotEmpty) _buildGrid(state.notes)
+                if (state is HomeNotesState && state.pinnedNotes.isNotEmpty && state.notes.isNotEmpty)
+                  _buildTitle('OTHERS'),
+                if (state is HomeNotesState && state.notes.isNotEmpty) _buildGrid(state.notes),
+                _buildNoData(state),
               ],
             );
           },
@@ -74,11 +83,18 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {});
         },
         children: notes
-            .map((e) => GridItem(
+            .map((e) => GestureDetector(
                   key: ValueKey(e),
-                  note: e,
-                  onPinned: () => context.read<HomeCubit>().pinnedNotes(e, !e.value!.isPinned!),
-                  onDelete: () => context.read<HomeCubit>().delete(e.key!),
+                  onTap: () async {
+                    customDialog(context, child: NotesDialogWidget(note: e)).then((value) {
+                      context.read<HomeCubit>().updateNotes(e);
+                    });
+                  },
+                  child: GridItem(
+                    note: e,
+                    onPinned: () => context.read<HomeCubit>().pinnedNotes(e, !e.value!.isPinned!),
+                    onDelete: () => context.read<HomeCubit>().delete(e.key!),
+                  ),
                 ))
             .toList(),
       ),
@@ -88,116 +104,33 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Text(title, style: Theme.of(context).textTheme.titleMedium,),
-    );
-  }
-}
-
-class NotesTextField extends StatefulWidget {
-  const NotesTextField({Key? key}) : super(key: key);
-
-  @override
-  State<NotesTextField> createState() => _NotesTextFieldState();
-}
-
-class _NotesTextFieldState extends State<NotesTextField> {
-  bool _isVsible = false;
-
-  final _txtDescriptionController = TextEditingController();
-  final _txtTitleController = TextEditingController();
-
-  final _descriptionFocus = FocusNode();
-  final _titleFocus = FocusNode();
-
-  String title = "";
-  String description = "";
-
-  @override
-  void initState() {
-    _titleFocus.addListener(() {
-      if (!_descriptionFocus.hasFocus && !_titleFocus.hasFocus) {
-        _saveData();
-      }
-    });
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          color: Colors.white,
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.grey,
-              blurRadius: 5.0,
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              Visibility(
-                visible: _isVsible,
-                child: TextField(
-                  focusNode: _titleFocus,
-                  controller: _txtTitleController,
-                  decoration: const InputDecoration(border: InputBorder.none, hintText: 'Title'),
-                ),
-              ),
-              Focus(
-                onFocusChange: _onFocusChange,
-                child: TextField(
-                  focusNode: _descriptionFocus,
-                  controller: _txtDescriptionController,
-                  decoration: const InputDecoration(border: InputBorder.none, hintText: 'Take a note...'),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium,
       ),
     );
   }
 
-  void _onFocusChange(bool hasFocus) {
-    setState(() {
-      if (hasFocus) {
-        _isVsible = hasFocus;
-      } else {
-        if (_titleFocus.hasFocus) {
-          _isVsible = true;
-        } else {
-          _isVsible = false;
-
-          _saveData();
-        }
-      }
-    });
-  }
-
-  void _saveData() {
-    final title = _txtTitleController.text;
-    final description = _txtDescriptionController.text;
-
-    if (title.isEmpty && description.isEmpty) {
-      setState(() {
-        _isVsible = false;
-      });
-      return;
+  Widget _buildNoData(HomeState state) {
+    if (state is HomeNotesState && state.notes.isEmpty && state.pinnedNotes.isEmpty) {
+      return Expanded(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset('assets/icons/bulb.png', color: Colors.grey,),
+              const SizedBox(height: 15),
+              Text(
+                'Notes you add appear here',
+                style: Theme.of(context).textTheme.headline5?.copyWith(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
-    _txtTitleController.text = "";
-    _txtDescriptionController.text = "";
-
-    setState(() {
-      _isVsible = false;
-    });
-
-    context.read<HomeCubit>().saveNotes(title, description, false);
+    return const SizedBox();
   }
 }
